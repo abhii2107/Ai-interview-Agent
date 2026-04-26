@@ -8,13 +8,15 @@ import {
   RiShieldCheckLine,
   RiArrowRightLine,
 } from "react-icons/ri";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../utils/firebase";
 
 /* ── rotating words for the hero text ── */
 const ROTATING_WORDS = [
   "Confidence",
   "Clarity",
-  "Career Growth",
-  "Your Dream Job",
+  "Career",
+  "Dream Job",
 ];
 
 /* ── orbit items around the logo ── */
@@ -36,10 +38,17 @@ function Auth() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleGoogleSignIn = () => {
-    // TODO: Implement Google OAuth sign-in
-    console.log("Google Sign-In triggered");
-  };
+
+
+  const handleGoogleAuth = async() => {
+    try {
+      // calling function from firebase.js popup window
+      const response = await signInWithPopup(auth,provider);
+      console.log(response)
+    } catch (error) {
+      console.log("Error in Google sign in",error)
+    }
+  }
 
   return (
     <div className="relative min-h-screen w-full flex bg-[#FAF9F6] overflow-hidden font-['Inter',system-ui,sans-serif]">
@@ -60,8 +69,8 @@ function Auth() {
             background:
               "radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)",
           }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute w-96 h-96 rounded-full -bottom-20 right-10"
@@ -69,81 +78,76 @@ function Auth() {
             background:
               "radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%)",
           }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.12, 1], opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* ── Central orbiting logo system ── */}
         <div className="relative z-10 flex flex-col items-center">
           {/* Orbiting icons */}
-          <div className="relative w-52 h-52 mb-10">
-            {/* Orbit ring */}
-            <motion.div
-              className="absolute inset-0 rounded-full border border-white/[0.06]"
-              animate={{ rotate: 360 }}
-              transition={{
-                duration: 30,
-                repeat: Infinity,
-                ease: "linear",
-              }}
+          <div className="relative w-56 h-56 mb-12">
+            {/* Outer orbit ring - static */}
+            <div
+              className="absolute rounded-full border border-white/[0.06]"
+              style={{ inset: "-24px" }}
             />
-            {/* Second orbit ring */}
+            {/* Inner orbit ring - static */}
+            <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.05]" />
+
+            {/* Soft glow behind logo */}
             <motion.div
-              className="absolute -inset-6 rounded-full border border-dashed border-white/[0.04]"
-              animate={{ rotate: -360 }}
-              transition={{
-                duration: 50,
-                repeat: Infinity,
-                ease: "linear",
+              className="absolute inset-0 m-auto w-32 h-32 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)",
               }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             />
 
             {/* Center logo */}
             <div className="absolute inset-0 flex items-center justify-center">
               <motion.div
-                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-xl shadow-orange-500/20"
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-orange-500/25"
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
                 <span className="text-white text-3xl font-black tracking-tighter">V</span>
               </motion.div>
             </div>
 
-            {/* Orbiting items */}
-            {ORBIT_ICONS.map(({ Icon, color, angle }, i) => (
-              <motion.div
-                key={i}
-                className="absolute top-1/2 left-1/2"
-                animate={{ rotate: 360 }}
-                transition={{
-                  duration: 20,
-                  repeat: Infinity,
-                  ease: "linear",
-                  delay: i * 0.5,
-                }}
-                style={{ transformOrigin: "0 0" }}
-              >
-                <motion.div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    backgroundColor: `${color}18`,
-                    border: `1px solid ${color}30`,
-                    transform: `rotate(${angle}deg) translateY(-90px) rotate(-${angle}deg) translate(-50%, -50%)`,
-                  }}
-                  animate={{
-                    rotate: -360,
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: "linear",
-                    delay: i * 0.5,
-                  }}
-                >
-                  <Icon style={{ color }} className="text-lg" />
-                </motion.div>
-              </motion.div>
-            ))}
+            {/* Orbiting items — positioned with inline calc, counter-rotated so icons stay upright */}
+            <motion.div
+              className="absolute inset-0"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+            >
+              {ORBIT_ICONS.map(({ Icon, color, angle }, i) => {
+                const rad = (angle * Math.PI) / 180;
+                const r = 100; // orbit radius in px
+                const x = Math.cos(rad) * r;
+                const y = Math.sin(rad) * r;
+                return (
+                  <motion.div
+                    key={i}
+                    className="absolute w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm"
+                    style={{
+                      top: "50%",
+                      left: "50%",
+                      marginTop: "-20px",
+                      marginLeft: "-20px",
+                      transform: `translate(${x}px, ${y}px)`,
+                      backgroundColor: `${color}18`,
+                      border: `1px solid ${color}30`,
+                    }}
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Icon style={{ color }} className="text-lg" />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </div>
 
           {/* Left panel text content */}
@@ -179,8 +183,8 @@ function Auth() {
               <motion.div
                 key={label}
                 className="px-5 py-3 rounded-2xl bg-white/[0.05] border border-white/[0.07] text-center"
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
-                transition={{ type: "spring", stiffness: 300 }}
+                whileHover={{ scale: 1.04, backgroundColor: "rgba(255,255,255,0.08)" }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
               >
                 <div className="text-white font-bold text-lg">{value}</div>
                 <div className="text-white/30 text-xs mt-0.5">{label}</div>
@@ -255,10 +259,10 @@ function Auth() {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={wordIndex}
-                    initial={{ y: 20, opacity: 0, filter: "blur(4px)" }}
+                    initial={{ y: 14, opacity: 0, filter: "blur(3px)" }}
                     animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-                    exit={{ y: -20, opacity: 0, filter: "blur(4px)" }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    exit={{ y: -14, opacity: 0, filter: "blur(3px)" }}
+                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     className="inline-block bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent"
                   >
                     {ROTATING_WORDS[wordIndex]}
@@ -266,12 +270,14 @@ function Auth() {
                 </AnimatePresence>
                 {/* Underline accent */}
                 <motion.div
-                  className="absolute -bottom-1 left-0 h-[3px] rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
-                  animate={{ width: ["0%", "100%", "100%", "0%"] }}
+                  className="absolute -bottom-1 left-0 h-[2.5px] rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                  animate={{ scaleX: [0, 1, 1, 0] }}
+                  style={{ transformOrigin: "left" }}
                   transition={{
                     duration: 2.8,
                     repeat: Infinity,
-                    ease: "easeInOut",
+                    ease: [0.22, 1, 0.36, 1],
+                    times: [0, 0.35, 0.65, 1],
                   }}
                 />
               </span>
@@ -344,7 +350,7 @@ function Auth() {
             transition={{ delay: 0.85, duration: 0.5 }}
           >
             <motion.button
-              onClick={handleGoogleSignIn}
+              onClick={handleGoogleAuth}
               whileHover={{ scale: 1.015, y: -2 }}
               whileTap={{ scale: 0.985 }}
               className="group w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#1a1a2e] text-white font-semibold text-[15px] cursor-pointer transition-all duration-300 hover:bg-[#242445] hover:shadow-xl hover:shadow-[#1a1a2e]/15 active:shadow-md"
@@ -353,8 +359,8 @@ function Auth() {
               <span>Continue with Google</span>
               <motion.div
                 className="ml-1"
-                animate={{ x: [0, 4, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
                 <RiArrowRightLine className="text-white/50 text-sm" />
               </motion.div>
