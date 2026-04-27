@@ -1,7 +1,7 @@
 // we already got the response we will use the displayname and eamil from response(response.user.displayname) and we will use the name and email and will create the user in our mongoDB database  
 
-import generateToken from "../config/Token";
-import User from "../models/user.model";
+import generateToken from "../config/Token.js";
+import User from "../models/user.model.js";
 
 
 // frontend data
@@ -18,7 +18,12 @@ import User from "../models/user.model";
 export const googleAuth = async (req,res) => {
     try {
         // frontend se data
-        const {name,email} = req.body;
+        const {name,email} = req.body || {};
+
+        if (!name || !email) {
+            return res.status(400).json({ message: "name and email are required" });
+        }
+
         // first check that the user is already present in database or not
         let user = await User.findOne({email})
         if(!user){
@@ -30,8 +35,12 @@ export const googleAuth = async (req,res) => {
         }
 
         let token = await generateToken(user._id)
+        if (!token) {
+            return res.status(500).json({ message: "token generation failed. check JWT_SECRET" });
+        }
+
         res.cookie("token",token,{
-            http:true,
+            httpOnly:true,
             secure:false,
             sameSite: "strict",
             maxAge: 1000 * 60 * 60 * 24 * 7, // milli seconds

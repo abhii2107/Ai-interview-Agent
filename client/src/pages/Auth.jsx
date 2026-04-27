@@ -10,6 +10,8 @@ import {
 } from "react-icons/ri";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../utils/firebase";
+import { serverUrl } from "../App";
+import axios from "axios"
 
 /* ── rotating words for the hero text ── */
 const ROTATING_WORDS = [
@@ -44,7 +46,13 @@ function Auth() {
     try {
       // calling function from firebase.js popup window
       const response = await signInWithPopup(auth,provider);
-      console.log(response)
+      let User  = response.user
+      let name  = User.displayName
+      let email = User.email
+      // This line sends data from your frontend to your backend server using a POST request.
+      const result = await axios.post(serverUrl + "/api/auth/google" , {name,email}, {withCredentials:true}) 
+      console.log(result.data)
+
     } catch (error) {
       console.log("Error in Google sign in",error)
     }
