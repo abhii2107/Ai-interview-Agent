@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import axios from 'axios'
 import { setUserData } from './redux/userSlice'
 import { useDispatch } from 'react-redux'
+import InterviewPage from './pages/InterviewPage'
 
 export const serverUrl = "http://localhost:8000"
 
@@ -34,6 +35,7 @@ useEffect(() => {
     <Routes>
       <Route path='/' element={<Home />} />
       <Route path='/auth' element={<Auth />} />
+      <Route path = "/interview" element={<InterviewPage/>}/>
     </Routes>
   )
 }

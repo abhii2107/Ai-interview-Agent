@@ -5,22 +5,22 @@ import { askAi } from '../services/openRouter.service.js';
 
 
 
-export const analyzeResume = (req,res) => {
+export const analyzeResume = async (req, res) => {
     try {
-        if(!req.file){
-            return res.status(400).json({message:"No file uploaded"});
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
         }
         const filepath = req.file.path;
         // We will use the filepath to convert the pdf to text and then we will use the text to generate the interview questions
         // We can use the pdf-parse library to convert the pdf to text
         const fileBuffer = await fs.promises.readFile(filepath);
         const uint8Array = new Uint8Array(fileBuffer);
-        const pdf = await pdfjsLib.getDocument({data:uint8Array}).promise;
+        const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
 
         let resumeText = "";
 
         // extract text from each page of the PDF
-        for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
             const content = await page.getTextContent();
             const pageText = content.items.map(item => item.str).join(" ");
@@ -48,14 +48,18 @@ export const analyzeResume = (req,res) => {
                 `
             },
             {
-                role : "user",
-                content : resumeText
+                role: "user",
+                content: resumeText
             }
         ];
 
-        const airesponse = await askAi (messages);
+        const airesponse = await askAi(messages);
+        const cleanedResponse = airesponse
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
-        const parsed = JSON.parse(airesponse);
+        const parsed = JSON.parse(cleanedResponse);
 
         fs.unlinkSync(filepath);
 
@@ -70,9 +74,9 @@ export const analyzeResume = (req,res) => {
 
 
     } catch (error) {
-        if(req.file && fs.existsSync(req.file.path)){
+        if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }
-        return res.status(500).json({message:"Failed to analyze resume", error: error.message});
+        return res.status(500).json({ message: "Failed to analyze resume", error: error.message });
     }
 }
