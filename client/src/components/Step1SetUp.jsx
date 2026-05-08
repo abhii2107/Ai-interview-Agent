@@ -22,27 +22,28 @@ function Step1SetUp({ onStart }) {
   const [analysisDone, setAnalysisDone] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const handleUploadResume = async() => {
-    if(!resumeFile || analyzing) return;
-      setAnalyzing(true);
+  const handleUploadResume = async () => {
+    if (!resumeFile || analyzing) return;
+    setAnalyzing(true);
 
-      const formdata = new FormData();
-      formdata.append("resume", resumeFile);
+    const formdata = new FormData();
+    formdata.append("resume", resumeFile);
 
-      try {
-        const result = await axios.post(serverUrl+ "/api/interview/resume", formdata);
-        console.log(result.data);
-        setRole(result.data.role || "");
-        setExperience(result.data.experience || "");
-        setProjects(result.data.projects || []);
-        setSkills(result.data.skills || []);
-          setResumeText(result.data.resumeText || "");
-          setAnalysisDone(true);
-          setAnalyzing(false);
-      } catch (error) {
-        console.log("Error in uploading resume",error);
-      }
-    
+    try {
+      const result = await axios.post(serverUrl + "/api/interview/resume", formdata, { withCredentials: true });
+      console.log(result.data);
+      setRole(result.data.role || "");
+      setExperience(result.data.experience || "");
+      setProjects(result.data.projects || []);
+      setSkills(result.data.skills || []);
+      setResumeText(result.data.resumeText || "");
+      setAnalysisDone(true);
+      setAnalyzing(false);
+    } catch (error) {
+      console.log("Error in uploading resume", error);
+      setAnalyzing(false);
+    }
+
   }
 
   return (
@@ -152,24 +153,71 @@ function Step1SetUp({ onStart }) {
                 </p>
                 {resumeFile && (
                   <motion.button
-                    onClick={(e) =>{e.stopPropagation();handleUploadResume();}}
+                    onClick={(e) => { e.stopPropagation(); handleUploadResume(); }}
                     whileHover={{ scale: 1.02 }}
                     className='mt-4 bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition cursor-pointer'>
-                      {analyzing ? "Analyzing..." : "Analyze Resume"}
+                    {analyzing ? "Analyzing..." : "Analyze Resume"}
                   </motion.button>
                 )}
               </motion.div>
             )}
 
-             <motion.button 
-             disabled={!role || !experience}
-             whileHover={{scale : 1.03}}
-             whileTap={{scale: 0.95}}
-             className='w-full disabled:bg-gray-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md cursor-pointer'>
+            {analysisDone && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className='bg-gray-50 p-4 rounded-xl sapce-y-4'>
+                <h3 className="text-lg font-semibold text-gray-800">Analysis Results</h3>
+
+                {projects.length > 0 && (
+                  <div>
+                    <p className="text-gray-700 mb-1 font-medium">
+                      Projects:
+                    </p>
+
+                    <ul className = " list-disc list-inside text-gray-600 space-y-1">
+                      {
+                        projects.map((project, index) => (
+                          <li key={index} className="text-gray-600">
+                            {project}
+                          </li>
+                        ))
+                      }
+                    </ul>
+
+                  </div>
+                )}
+                {skills.length > 0 && (
+                  <div>
+                    <p className="text-gray-700 mb-1 font-medium">
+                      Skills:
+                    </p>
+
+                    <div className = "flex flex-wrap gap-2">
+                      {
+                        skills.map((skill, index) => (
+                          <span className = "bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm" key={index}>
+                            {skill}
+                          </span>
+                        ))
+                      }
+                    </div>
+
+                  </div>
+                )}
+
+              </motion.div>
+            )}
+
+            <motion.button
+              disabled={!role || !experience}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              className='w-full disabled:bg-gray-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md cursor-pointer'>
 
               Start Interview
 
-             </motion.button>
+            </motion.button>
 
           </div>
         </motion.div>
