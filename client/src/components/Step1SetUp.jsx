@@ -9,8 +9,12 @@ import {
 } from 'react-icons/fa';
 import axios from 'axios';
 import { serverUrl } from '../App';
+import { useDispatch, useSelector } from 'react-redux';
+import { setUserData } from '../redux/userSlice';
 
 function Step1SetUp({ onStart }) {
+  const dispatch = useDispatch();
+  const {userData} = useSelector((state) => state.user);
   const [role, setRole] = useState("")
   const [experience, setExperience] = useState("")
   const [mode, setMode] = useState("Technical")
@@ -44,6 +48,26 @@ function Step1SetUp({ onStart }) {
       setAnalyzing(false);
     }
 
+  }
+
+  const handleStart = async() => {
+    setLoading(true);
+    try {
+      const result = await axios.post(serverUrl + "/api/interview/generate-questions",{role,experience,mode,resumeText,projects,skills},{withCredentials:true});
+      console.log(result.data);
+
+      if(userData){
+        dispatch(setUserData({...userData, credits :result.data. creditsLeft}))
+      }
+
+      setLoading(false);
+      onStart(result.data) // ye dta step2 ke andar jaega
+
+
+    } catch (error) {
+      console.log(error)
+      setLoading(false);
+    }
   }
 
   return (
@@ -114,7 +138,7 @@ function Step1SetUp({ onStart }) {
 
               <input type="text" placeholder="Enter role" className='w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'
                 onChange={(e) => setRole(e.target.value)} value={role}
-              />
+              />  
 
             </div>
             <div className='relative'>
@@ -210,12 +234,13 @@ function Step1SetUp({ onStart }) {
             )}
 
             <motion.button
-              disabled={!role || !experience}
+            onClick={handleStart}
+              disabled={!role || !experience || loading}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.95 }}
               className='w-full disabled:bg-gray-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md cursor-pointer'>
 
-              Start Interview
+              {loading ? "Starting" : "Start Interview"}
 
             </motion.button>
 
