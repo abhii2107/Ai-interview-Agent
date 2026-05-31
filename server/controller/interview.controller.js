@@ -207,26 +207,37 @@ export const generateQuestions = async (req, res) => {
 
 export const submitAnswer = async (req, res) => {
     try {
-        const{interviewId, questionId, answer, timeTaken} = req.body;
+        const { interviewId, questionIndex, answer, timeTaken } = req.body;
+
+        if (typeof interviewId === 'undefined' || typeof questionIndex === 'undefined') {
+            return res.status(400).json({ message: 'interviewId and questionIndex are required' });
+        }
 
         const interview = await Interview.findById(interviewId);
+        if (!interview) {
+            return res.status(404).json({ message: 'Interview not found' });
+        }
 
-        const question = interview.questions[questionIndex]
+        if (!Array.isArray(interview.questions) || questionIndex < 0 || questionIndex >= interview.questions.length) {
+            return res.status(400).json({ message: 'Invalid question index' });
+        }
+
+        const question = interview.questions[questionIndex];
 
         //  if no answer
-        if(!answer){
+        if (!answer || !answer.trim()) {
             question.score = 0;
-            question.feedback = "You did not provide an answer to this question.";
-            question.answer = "";
+            question.feedback = 'You did not provide an answer to this question.';
+            question.answer = '';
 
             await interview.save();
 
             return res.json({
                 feedback: question.feedback,
-            })
+            });
         }
 
-        if(timeTaken > question.timeLimit){
+        if (typeof timeTaken === 'number' && timeTaken > question.timeLimit) {
             question.score = 0;
             question.feedback = `You exceeded the time limit of ${question.timeLimit} seconds for this question.`;
             question.answer = answer;
@@ -235,12 +246,12 @@ export const submitAnswer = async (req, res) => {
 
             return res.json({
                 feedback: question.feedback,
-            })
+            });
         }
 
         const messages = [
             {
-                role: "system",
+                role: 'system',
                 content: `You are a professional interviewer evaluating a candidate's answer in a real interview.
                 Evaluate naturally and fairly, like a real person would.
                 
@@ -277,17 +288,22 @@ export const submitAnswer = async (req, res) => {
                     "finalScore": number,
                     "feedback": "short human feedback"
                 }
-                `
+                `,
             },
             {
-                role: "user",
-                content: `Question: ${question.question}Answer: ${answer}
-                `
-            }
+                role: 'user',
+                content: `Question: ${question.question} Answer: ${answer}`,
+            },
         ];
 
         const aiResponse = await askAi(messages);
-        const parsed = JSON.parse(aiResponse)
+
+        let parsed;
+        try {
+            parsed = JSON.parse(aiResponse);
+        } catch (e) {
+            return res.status(500).json({ message: 'AI returned invalid JSON', error: e.message, raw: aiResponse });
+        }
 
         question.answer = answer;
         question.confidence = parsed.confidence;
@@ -295,17 +311,15 @@ export const submitAnswer = async (req, res) => {
         question.correctness = parsed.correctness;
         question.score = parsed.finalScore;
         question.feedback = parsed.feedback;
-        
+
         await interview.save();
 
-        return res.status(200).json({feedback: parsed.feedback})
+        return res.status(200).json({ feedback: parsed.feedback });
 
+    } catch (error) {
+        return res.status(500).json({ message: `Failed to submit answer`, error: error.message });
     }
-     catch (error) {
-        return res.staus(500).json({message: `Failed to submit answer ${error}`})
-    }
-
-}
+};
 
 
 export const finishInterview = async(req,res) => {
