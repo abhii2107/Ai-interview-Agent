@@ -12,7 +12,7 @@ import { BsArrowLeft, BsArrowRight } from 'react-icons/bs';
 
 
 
-function Step2Interview({ interviewData, onFinish }) {
+function Step2Interview({ interviewData, onFinish = () => {} }) {
 
   const { interviewId, questions, userName } = interviewData;
   const [introPhase, setIntroPhase] = useState(true);

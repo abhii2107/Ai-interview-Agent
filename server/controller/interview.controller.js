@@ -162,17 +162,17 @@ export const generateQuestions = async (req, res) => {
 
         const aiResponse = await askAi(message);
 
-        if(!aiResponse || !aiResponse.trim()){
+        if (!aiResponse || !aiResponse.trim()) {
             return res.status(500).json({ message: "AI returned an Empty response" });
         }
 
         const questionsArray = aiResponse.split("\n").
-        map(q => q.trim())
-        .filter(q => q.length > 0)
-        .slice(0,5);
-        
-        if(questionsArray.length === 0){
-             return res.status(500).json({ message: "AI did not generate any valid questions" });
+            map(q => q.trim())
+            .filter(q => q.length > 0)
+            .slice(0, 5);
+
+        if (questionsArray.length === 0) {
+            return res.status(500).json({ message: "AI did not generate any valid questions" });
         }
         user.credits -= 50;
         await user.save();
@@ -183,10 +183,10 @@ export const generateQuestions = async (req, res) => {
             role,
             experience,
             mode,
-            resumeText : safeResume,
+            resumeText: safeResume,
             questions: questionsArray.map((q, index) => ({
                 question: q,
-                difficulty: ["easy" , "easy" , "medium" , "medium" , "hard"][index],
+                difficulty: ["easy", "easy", "medium", "medium", "hard"][index],
                 timeLimit: [60, 60, 90, 90, 120][index]
             }))
         })
@@ -322,14 +322,14 @@ export const submitAnswer = async (req, res) => {
 };
 
 
-export const finishInterview = async(req,res) => {
+export const finishInterview = async (req, res) => {
     try {
-        const{interviewId} = req.body;
+        const { interviewId } = req.body;
 
         const interview = await Interview.findById(interviewId);
 
-        if(!interview){
-            return res.status(400).json({message: "Interview not found"})
+        if (!interview) {
+            return res.status(400).json({ message: "Interview not found" })
         }
 
         const totalQuestions = interview.questions.length;
@@ -360,13 +360,13 @@ export const finishInterview = async(req,res) => {
 
         return res.status(200).json({
             finalScore: Number(finalScore.toFixed(1)),
-            confidence : Number(avgConfidence.toFixed(1)),
-            communication : Number(avgCommunication.toFixed(1)),
-            correctness : Number(avgCorrectness.toFixed(1)),
+            confidence: Number(avgConfidence.toFixed(1)),
+            communication: Number(avgCommunication.toFixed(1)),
+            correctness: Number(avgCorrectness.toFixed(1)),
             questionWiseScore: interview.questions.map((q) => ({
                 question: q.question,
-                score : q.score || 0,
-                feedback :  q.feedback || "",
+                score: q.score || 0,
+                feedback: q.feedback || "",
                 confidence: q.confidence || 0,
                 communication: q.communication || 0,
                 correctness: q.correctness || 0,
@@ -377,5 +377,60 @@ export const finishInterview = async(req,res) => {
 
     } catch (error) {
         return res.status(500).json({ message: "Failed to finish interview", error: error.message });
+    }
+}
+
+// same data chaihiye jbb koi history wale page pe jaye to waha pe bhi same data chahiye interview ka jo question answer score feedback sab kuch hoga iss data ko step 3 report me bhejna hai jaha pe candidate apne interview ka detailed report dekh paye
+
+export const getMyInterviews = async (req, res) => {
+    try {
+        const interviews = await Interview.find({ userId: req.userId })
+            .sort({ createdAt: -1 })// jo bhi interview sabse last me hua hoga wo sabse pehle show hoga
+            .select("role experience mode finalScore status createdAt") // ye data hum interview history page pe show karenge
+
+        return res.status(200).json({ interviews })
+
+    } catch (error) {
+        return res.status(500).json({ message: `Failed to get current user interviews ${error} ` });
+    }
+}
+
+export const getInterviewReport = async (req, res) => {
+    try {
+        const interview = await Interview.findById(req.params.id);
+
+        if (!interview) {
+            return res.status(404).json({ message: "Interview not found" })
+        }
+
+        const totalQuestions = interview.questions.length;
+        
+        let totalConfidence = 0;
+        let totalCommunication = 0;
+        let totalCorrectness = 0;
+
+        interview.questions.forEach((q) => {
+           
+            totalConfidence += q.confidence || 0;
+            totalCommunication += q.communication || 0;
+            totalCorrectness += q.correctness || 0;
+        })
+
+        const avgConfidence = totalQuestions ? totalConfidence / totalQuestions : 0;
+
+        const avgCommunication = totalQuestions ? totalCommunication / totalQuestions : 0;
+
+        const avgCorrectness = totalQuestions ? totalCorrectness / totalQuestions : 0;
+
+        return res.json({
+            finalScore: interview.finalScore,
+            confidence: Number(avgConfidence.toFixed(1)),
+            communication: Number(avgCommunication.toFixed(1)),
+            correctness: Number(avgCorrectness.toFixed(1)), 
+            questioWiseScore: interview.questions
+        })
+
+    } catch (error) {
+        return res.status(500).json({ message: "Failed to get interview report", error: error.message });
     }
 }
