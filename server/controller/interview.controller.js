@@ -427,6 +427,7 @@ export const getInterviewReport = async (req, res) => {
             confidence: Number(avgConfidence.toFixed(1)),
             communication: Number(avgCommunication.toFixed(1)),
             correctness: Number(avgCorrectness.toFixed(1)), 
+            questionWiseScore: interview.questions,
             questioWiseScore: interview.questions
         })
 
