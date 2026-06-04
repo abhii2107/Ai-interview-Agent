@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { FaArrowLeft } from 'react-icons/fa'
+import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
-import {motion} from "react-motion"
+import { motion } from "motion/react";
 
 function Pricing() {
   const navigate = useNavigate();
@@ -47,7 +47,8 @@ function Pricing() {
         "Advanced Performance Analytics",
         "Personalized Coaching Sessions",
         "Priority Support"
-      ]
+      ],
+      badge: "Best Value",
     }
   ]
 
@@ -82,8 +83,86 @@ function Pricing() {
             <motion.div 
               key={plan.id}
             whileHover= {!plan.default && {scale: 1.03}}
-            onClick = {() => !plan.default && seSelectedPlan(plan.id)}
+            onClick = {() => !plan.default && setSelectedPlan(plan.id)}
+            className={`relative rounded-3xl p-8 transition-all duration-300
+             border ${
+              isSelected ? "border-emerald-500 bg-emerald-50 shadow-lg" : "border-gray-300 bg-white hover:shadow-md"
+             }
+             ${plan.default ? "cursor-default" : "cursor-pointer"}
+              `}
             >
+              {/* Badge */}
+              {
+                plan.badge && (
+                  <div className="absolute top-6 right-6 bg-emerald-600 text-white text-xs px-4 py-1 rounded-full shadow-lg">
+                    {plan.badge}
+                  </div>
+                )
+              }
+
+              {/* default tag */}
+
+              {
+                plan.default && (
+                  <div className="absolute top-6 right-6 bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full shadow-lg">
+                    Default
+                  </div>
+                )
+              }
+
+              {/* plan name */}
+              <h3 className='text-xl font-semibold text-gray-800'>
+                {
+                  plan.name
+                }
+              </h3>
+
+                {/* plan price */}
+                <div className="mt-4">
+                  <span className='text-3xl font-bold text-emerald-600'>
+                    {
+                      plan.price
+                    }
+                  </span>
+                  <p className='text-gray-500 mt-2'>
+                    {
+                      plan.credits 
+                    }
+                    Credits
+                  </p>
+                </div>
+
+                {/* plan description  */}
+                <p className='text-gray-500 mt-4 text-sm leading-relaxed'>
+                  {
+                    plan.description
+                  }
+                </p>
+
+                {/* Features */}
+                <div className="mt-6 space-y-3 text-left">
+                  {
+                    plan.features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <FaCheckCircle className="text-emerald-500 text-sm"/>
+                        <span className="text-gray-700 text-sm">{feature}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+
+                {
+                  !plan.default && 
+                  <button className = { `w-full mt-8 py-3 rounded-xl font-semibold transition ${
+                    isSelected ? "bg-emerald-600 text-white hover:opacity-90" : "bg-gray-200 text-gray-700 hover:bg-emerald-50"
+                  }`}>
+
+                    {
+                      isSelected ? "Proceed to Pay" : "Select Plan"
+                    }
+                    
+                  </button>
+                }
 
             </motion.div>
           )
