@@ -2,10 +2,17 @@ import React, { useState } from 'react'
 import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import { motion } from "motion/react";
+import axios from 'axios';
+import { serverUrl } from '../App'
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../redux/userSlice';
 
 function Pricing() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [selectedPlan, setSelectedPlan] = useState("free");
+  const [loadingPlan, setLoadingPlan] = useState(null);
+
 
   const plans = [
     {
@@ -52,7 +59,61 @@ function Pricing() {
     }
   ]
 
+const handlePayment = async(plan) => {
+  try {
+    setLoadingPlan(plan.id);
+    const amount = plan.id === "basic" ? 100 : plan.id === "pro" ? 500 : 0;
 
+    const result = await axios.post(serverUrl + "/api/payment/order", {
+      planId: plan.id,
+      amount: amount,
+      credits: plan.credits,
+    },{withCredentials: true})
+    console.log(result.data);
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: result.data.amount,
+      currency: "INR",
+      name: "VivaNexa.AI",
+      description: `${plan.name} - ${plan.credits} Credits`,
+      order_id: result.data.id,
+
+      handler: async function (response) {
+        const verifyPayload = {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        };
+
+        const verifypay = await axios.post(serverUrl + "/api/payment/verify", verifyPayload, { withCredentials: true });
+        dispatch(setUserData(verifypay.data.user));
+
+        alert("Payment successful. Credits added!")
+        navigate("/")
+
+      },
+      theme:{
+        color: "#10b981"
+      },
+      
+    }
+
+    const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", function (response) {
+      console.error("Payment failed:", response.error);
+      alert(response.error?.description || "Payment failed");
+      setLoadingPlan(null);
+    });
+
+    rzp.open();
+  } catch (error) {
+    console.error("Payment error:", error);
+    alert(error?.response?.data?.message || "Unable to start payment");
+    setLoadingPlan(null);
+  }
+}
 
 
   return (
@@ -153,12 +214,24 @@ function Pricing() {
 
                 {
                   !plan.default && 
-                  <button className = { `w-full mt-8 py-3 rounded-xl font-semibold transition ${
+                  <button 
+                  disabled ={loadingPlan === plan.id}
+                  onClick={(e) => {e.stopPropagation() 
+                    if(!isSelected){
+                      setSelectedPlan(plan.id)
+                    }
+                    else{
+                      handlePayment(plan);
+                    }
+                  }
+                }
+                  className = { `w-full mt-8 py-3 rounded-xl font-semibold transition ${
                     isSelected ? "bg-emerald-600 text-white hover:opacity-90" : "bg-gray-200 text-gray-700 hover:bg-emerald-50"
                   }`}>
 
                     {
-                      isSelected ? "Proceed to Pay" : "Select Plan"
+                      loadingPlan === plan.id ?
+                      "Processing..." : isSelected ? "Proceed to Pay" : "Select Plan"
                     }
                     
                   </button>
