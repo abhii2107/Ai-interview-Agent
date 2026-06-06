@@ -13,7 +13,7 @@ dotenv.config();
 const app = express()
 // cross origin resource sharing middleware frontend se connect krne k liye 
 app.use(cors({
-    origin:"http://localhost:5173",
+    origin:"https://vivanexa-ai-client.onrender.com",
     credentials:true,
 }))
 
